@@ -53,13 +53,3 @@ def setup_logger(name="app", level="Info"):
         logger.addHandler(file_handler)
 
     return logger
-
-
-# 示例：使用日志记录器
-if __name__ == "__main__":
-    logger = setup_logger(level="Debug")
-    logger.debug("这是一个调试信息")
-    logger.info("这是一个普通信息")
-    logger.warning("这是一个警告信息")
-    logger.error("这是一个错误信息")
-    logger.critical("这是一个严重错误信息")

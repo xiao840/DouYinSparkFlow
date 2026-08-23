@@ -1,8 +1,6 @@
 const { createApp, ref, reactive, computed } = Vue;
 const app = createApp({
   setup() {
-    const message = ref("Hello vue!");
-
     const match_mode_options = [
       {
         id: "nickname",
@@ -42,22 +40,14 @@ const app = createApp({
     // do not use same name with ref
     const form = reactive({
       PROXY_ADDRESS: "",
-      MESSAGE_TEMPLATE:
-        "[盖瑞]今日火花[加一]\n—— [右边] 每日一言 [左边] ——\n[API]",
+      MESSAGE_TEMPLATE: "🔥",
       HITOKOTO_TYPES: ["文学", "影视", "诗词", "哲学"],
       MATCH_MODE: "nickname",
       BROWSER_TIMEOUT: 120000,
       FRIEND_LIST_WAIT_TIME: 2000,
       TASK_RETRY_TIMES: 3,
       LOG_LEVEL: "Info",
-      ACCOUNTS: [
-        {
-          username: "user1",
-          unique_id: "12345678905",
-          cookies: "cookie1",
-          targets: ["friend1", "friend2"],
-        },
-      ],
+      ACCOUNTS: [],
     });
 
     const environmentVariables = computed(() => {
@@ -70,7 +60,7 @@ const app = createApp({
         FRIEND_LIST_WAIT_TIME: form.FRIEND_LIST_WAIT_TIME,
         TASK_RETRY_TIMES: form.TASK_RETRY_TIMES,
         LOG_LEVEL: form.LOG_LEVEL,
-        TASKS: form.ACCOUNTS.map((account) => ({
+        TASKS: form.ACCOUNTS.filter((account) => String(account.unique_id || "").trim()).map((account) => ({
           username: account.username,
           unique_id: account.unique_id,
           targets: account.targets,
@@ -79,8 +69,11 @@ const app = createApp({
     });
 
     const environmentSecrets = computed(() => {
-      return form.ACCOUNTS.reduce((acc, account, index) => {
-        acc[`COOKIES_${String(account.unique_id || "").toUpperCase()}`] = account.cookies;
+      return form.ACCOUNTS.reduce((acc, account) => {
+        const uniqueId = String(account.unique_id || "").trim();
+        if (uniqueId && account.cookies) {
+          acc[`COOKIES_${uniqueId.toUpperCase()}`] = account.cookies;
+        }
         return acc;
       }, {});
     });
@@ -172,7 +165,6 @@ const app = createApp({
     return {
       match_mode_options,
       log_level_options,
-      message,
       form,
       environmentVariables,
       environmentSecrets,

@@ -6,13 +6,11 @@
 ![Playwright](https://img.shields.io/badge/Playwright-%E2%9C%94-green?logo=playwright)
 ![chrome-headless-shell](https://img.shields.io/badge/chrome--headless--shell-%E2%9C%94-brightgreen?logo=googlechrome)
 
-> `dev`分支迁移到`https://www.douyin.com/chat` 加载更稳定，支持通过备注/昵称/抖音号等多种方式智能匹配。由于`https://www.douyin.com/chat`没经过长期测试，该分支目前暂不合并。有能力的可以研究一下
-
 ## 贡献者
 
 感谢所有为本项目做出贡献的开发者：
 
-[![contributors](https://contrib.rocks/image?repo=2061360308/DouYinSparkFlow)](https://github.com/2061360308/DouYinSparkFlow/graphs/contributors)
+[![contributors](https://contrib.rocks/image?repo=xiao840/DouYinSparkFlow)](https://github.com/xiao840/DouYinSparkFlow/graphs/contributors)
 
 ## 📌 项目介绍
 
@@ -49,13 +47,13 @@
 
 已开放讨论区，有疑问或展示相关成果，发布话题需求的可以加入讨论
 
-[跳转讨论区](https://github.com/2061360308/DouYinSparkFlow/discussions)
+[跳转讨论区](https://github.com/xiao840/DouYinSparkFlow/discussions)
 
 ## ⭐Star 趋势
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/chart?repos=2061360308/DouYinSparkFlow&type=date&legend=top-left&sealed_token=TlokSbTx6LsGFZNndYzOzoSQ4ReFseZ4kWxbS4BP0V3WAsAsnXUUVxQPdyEOEWUpHtpTS7hlIpAJMa7C7KbbEp4QtLwyahXr41t2liypNktp0Z3Nh_V2eIBQzSyxWMiFxedN_xifd4Np_MxyHSHs6BrSe672ge7ovFimoLv-yucCt-TV_6opPkp9qltR)](https://www.star-history.com/?repos=2061360308%2FDouYinSparkFlow&type=date&legend=top-left)
+[![Star History Chart](https://api.star-history.com/chart?repos=xiao840/DouYinSparkFlow&type=date&legend=top-left)](https://www.star-history.com/?repos=xiao840%2FDouYinSparkFlow&type=date&legend=top-left)
 
 ## ⚠️ 免责声明
 

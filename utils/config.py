@@ -45,7 +45,7 @@ def get_config():
 
     config = {
         "proxyAddress": os.getenv("PROXY_ADDRESS", ""),
-        "messageTemplate": os.getenv("MESSAGE_TEMPLATE", "[盖瑞]今日火花[加一]\\n—— [右边] 每日一言 [左边] ——\\n[API]"),
+        "messageTemplate": os.getenv("MESSAGE_TEMPLATE", "🔥"),
         "hitokotoTypes": json.loads(
             os.getenv("HITOKOTO_TYPES", '["文学","影视","诗词","哲学"]')
         ),
@@ -53,7 +53,7 @@ def get_config():
         "browserTimeout": int(os.getenv("BROWSER_TIMEOUT", "120000")),  # 浏览器操作超时时间，单位毫秒
         "friendListTimeout": int(os.getenv("FRIEND_LIST_WAIT_TIME", "2000")),  # 好友列表加载超时时间，单位毫秒
         "taskRetryTimes": int(os.getenv("TASK_RETRY_TIMES", "3")),  # 任务重试次数
-        "logLevel": os.getenv("LOG_LEVEL", "DEBUG"),  # 日志级别
+        "logLevel": os.getenv("LOG_LEVEL", "Info"),  # 日志级别
     }
 
     return config
