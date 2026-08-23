@@ -3,8 +3,6 @@ on:
   workflow_dispatch: # 允许手动触发
   schedule: # 定时任务
     - cron: "0 1 * * *" # 每天 1:00 UTC（对应北京时间 9:00）
-permissions:
-  contents: read
 jobs:
   run-main:
     timeout-minutes: 20
@@ -13,10 +11,10 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v4
       with:
         python-version: '3.11'
-    - name: Check Douyin Accessibility
+    - name: Test Douyin Accessibility
       run: |
         curl -I https://creator.douyin.com/
     - name: Install dependencies
@@ -37,3 +35,10 @@ jobs:
       with:
         name: run-logs
         path: logs/
+  workflow-keepalive:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - uses: liskin/gh-workflow-keepalive@v1
