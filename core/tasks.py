@@ -110,6 +110,77 @@ def next_empty_scroll_count(empty_scroll_count, scroll_moved):
     return empty_scroll_count + 1
 
 
+def _read_input_text(chat_input):
+    """Read the visible text from a contenteditable chat composer."""
+    try:
+        return (chat_input.inner_text(timeout=1000) or "").strip()
+    except Exception:
+        return (chat_input.text_content(timeout=1000) or "").strip()
+
+
+def _wait_for_input_clear(page, chat_input, timeout_ms=5000):
+    """Return whether the composer was cleared after a send action."""
+    deadline = time.monotonic() + timeout_ms / 1000
+    while time.monotonic() < deadline:
+        if not _read_input_text(chat_input):
+            return True
+        page.wait_for_timeout(200)
+    return not _read_input_text(chat_input)
+
+
+def _click_send_button(page):
+    """Click a send control when Enter is not accepted by the composer."""
+    selectors = (
+        'button:has-text("发送")',
+        '[role="button"]:has-text("发送")',
+        'button[aria-label*="发送"]',
+        '[role="button"][aria-label*="发送"]',
+        'button[title*="发送"]',
+        '[role="button"][title*="发送"]',
+    )
+    for selector in selectors:
+        buttons = page.locator(selector)
+        for index in range(buttons.count()):
+            button = buttons.nth(index)
+            try:
+                if button.is_visible() and button.is_enabled():
+                    button.click()
+                    return True
+            except Exception:
+                continue
+    return False
+
+
+def send_message(page, chat_input, message):
+    """Send one message and verify that the composer accepted it."""
+    lines = message.splitlines() or [message]
+    attempts = max(1, config["taskRetryTimes"])
+    for attempt in range(1, attempts + 1):
+        chat_input.click()
+        if _read_input_text(chat_input):
+            chat_input.press("Control+A")
+            chat_input.press("Backspace")
+        for index, line in enumerate(lines):
+            chat_input.type(line)
+            if index < len(lines) - 1:
+                chat_input.press("Shift+Enter")
+
+        chat_input.press("Enter")
+        if _wait_for_input_clear(page, chat_input):
+            return
+
+        if _click_send_button(page) and _wait_for_input_clear(page, chat_input):
+            return
+
+        logger.warning(
+            f"发送消息未确认（第 {attempt}/{attempts} 次），输入框仍有内容"
+        )
+        if attempt < attempts:
+            page.wait_for_timeout(500)
+
+    raise RuntimeError("发送消息失败：发送后输入框未清空")
+
+
 def scroll_and_select_user(page, username, targets):
     """尝试滚动并查找用户名"""
     # 定义目标元素和滚动容器的选择器
@@ -284,8 +355,8 @@ def do_user_task(browser, username, cookies, targets):
 
         logger.debug(f"账号 {username} 开始发送消息")
         # 滚动并选择用户
-        for username in scroll_and_select_user(page, username, targets):
-            logger.debug(f"账号 {username} 已选中好友 {username} 发送消息")
+        for target_name in scroll_and_select_user(page, username, targets):
+            logger.debug(f"账号 {username} 已选中好友 {target_name} 发送消息")
             # 等待聊天输入框元素加载完成，使用更稳定的属性选择器
             chat_input_selector = "xpath=//div[contains(@class, 'chat-input-')]"
             page.wait_for_selector(chat_input_selector, timeout=config["browserTimeout"])
@@ -293,19 +364,11 @@ def do_user_task(browser, username, cookies, targets):
 
             # 在 chat-input-dccKiL 中输入内容
             message = build_message()
-            for line in message.split("\\n"):
-                chat_input.type(line)  # 输入每一行
-                # 如果不是最后一行，模拟 Shift+Enter 插入换行
-                if line != message.split("\\n")[-1]:
-                    chat_input.press("Shift+Enter")  # 模拟 Shift+Enter 插入换行
-
             logger.debug(
-                f"账号 {username} 准备发送消息给好友 {username}：\n\t{message}"
+                f"账号 {username} 准备发送消息给好友 {target_name}：\n\t{message}"
             )
-            logger.debug(f"账号 {username} 给好友 {username} 发送消息完成")
-            # 模拟按下回车键发送消息
-            chat_input.press("Enter")
-            time.sleep(2)  # 发送完等待一会儿
+            send_message(page, chat_input, message)
+            logger.info(f"账号 {username} 给好友 {target_name} 发送消息已确认")
 
         context.close()  # 任务完成后关闭上下文
 
