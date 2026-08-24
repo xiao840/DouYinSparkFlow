@@ -63,6 +63,12 @@ def retry_operation(name, operation, retries=3, delay=2, *args, **kwargs):
                 raise
 
 
+def next_empty_scroll_count(empty_scroll_count, scroll_moved):
+    if scroll_moved:
+        return 0
+    return empty_scroll_count + 1
+
+
 def scroll_and_select_user(page, username, targets):
     """尝试滚动并查找用户名"""
     # 定义目标元素和滚动容器的选择器
@@ -106,9 +112,6 @@ def scroll_and_select_user(page, username, targets):
         # 查找所有目标元素
         target_elements = page.locator(target_selector).all()
 
-        # [修复] 记录本轮循环前已发现的好友数，用于判断是否有新发现
-        prev_found_count = len(found_targets)
-
         for element in target_elements:
             try:
                 # 查找子元素 span，模糊匹配 class
@@ -150,13 +153,6 @@ def scroll_and_select_user(page, username, targets):
             except Exception as e:
                 traceback.print_exc()
         else:
-            # [修复] 检查本轮是否有新好友被发现
-            new_found = len(found_targets) > prev_found_count
-            if new_found:
-                empty_scroll_count = 0  # 有新发现，重置计数器
-            else:
-                empty_scroll_count += 1  # 无新发现，递增计数器
-
             # [修复] 状态检测逻辑（多重兜底）
             
             # 1. 检查是否到底（"没有更多了" —— 使用模糊类名匹配）
@@ -166,20 +162,13 @@ def scroll_and_select_user(page, username, targets):
                     logger.warning(f"账号 {username} 搜索结束，仍有以下好友未找到: {remaining_targets}")
                 break
 
-            # 2. [修复] 检查连续空滚动次数，防止死循环
-            if empty_scroll_count >= MAX_EMPTY_SCROLLS:
-                logger.warning(f"账号 {username} 连续 {MAX_EMPTY_SCROLLS} 次滚动未发现新好友，判定已到达底部")
-                if len(remaining_targets) > 0:
-                    logger.warning(f"账号 {username} 搜索结束，仍有以下好友未找到: {remaining_targets}")
-                break
-
-            # 3. 检查是否正在加载
+            # 2. 检查是否正在加载
             if page.locator(loading_selector).count() > 0:
                 logger.debug(f"账号 {username} 列表正在加载中 (Loading)...")
                 time.sleep(1.5) # 给加载留点时间
                 # 不 break，继续去滚动以触发后续内容
 
-            # 4. 滚动容器
+            # 3. 滚动容器
             scrollable_element = page.locator(
                 scrollable_friends_selector
             ).element_handle()
@@ -200,10 +189,19 @@ def scroll_and_select_user(page, username, targets):
                     "(element) => element.scrollTop", scrollable_element
                 )
                 
-                if scroll_top_before == scroll_top_after:
-                    # scrollTop 没有变化，说明已经到底了
-                    empty_scroll_count += 2  # 加速判定到底
+                scroll_moved = scroll_top_before != scroll_top_after
+                empty_scroll_count = next_empty_scroll_count(
+                    empty_scroll_count, scroll_moved
+                )
+
+                if not scroll_moved:
+                    # 只有滚动位置连续不再变化时，才认为列表已到底。
                     logger.debug(f"账号 {username} scrollTop 未变化 ({scroll_top_before})，可能已到底 (空滚动计数: {empty_scroll_count}/{MAX_EMPTY_SCROLLS})")
+                    if empty_scroll_count >= MAX_EMPTY_SCROLLS:
+                        logger.warning(f"账号 {username} 连续 {MAX_EMPTY_SCROLLS} 次滚动未发现新好友，判定已到达底部")
+                        if len(remaining_targets) > 0:
+                            logger.warning(f"账号 {username} 搜索结束，仍有以下好友未找到: {remaining_targets}")
+                        break
                 else:
                     logger.debug(f"账号 {username} 滚动好友列表以加载更多好友 (scrollTop: {scroll_top_before} -> {scroll_top_after})")
                 
