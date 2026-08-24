@@ -15,6 +15,36 @@ logger = setup_logger(level=config.get("logLevel", "Info"))
 matchMode = config.get("matchMode", "nickname")
 userIDDict = {}
 
+def resolve_target_symbol(target_name, targets, user_id_dict):
+    target_name = str(target_name).strip()
+    target_ids = {str(target) for target in targets}
+
+    for key, info in user_id_dict.items():
+        if not isinstance(info, dict):
+            continue
+        aliases = {
+            str(value).strip()
+            for field in ("nickname", "remark_name", "remarkName", "name")
+            if (value := info.get(field))
+        }
+        if target_name not in aliases:
+            continue
+
+        candidate_ids = [
+            key,
+            info.get("short_id"),
+            info.get("ShortId"),
+            info.get("unique_id"),
+        ]
+        for candidate in candidate_ids:
+            if candidate is not None and str(candidate) in target_ids:
+                return str(candidate)
+
+    if target_name in target_ids:
+        return target_name
+    return None
+
+
 def handle_response(response: Response):
     """
     只监听你要的那个接口响应
@@ -30,10 +60,21 @@ def handle_response(response: Response):
             # print("\n📦 响应 JSON 数据：")
             # print(json.dumps(json_data, indent=4, ensure_ascii=False))
             for item in json_data.get("user_list", []):
-                short_id = item.get("user", {}).get("ShortId")
-                nickname = item.get("user", {}).get("nickname")
+                user = item.get("user", {})
+                short_id = (
+                    user.get("ShortId")
+                    or user.get("short_id")
+                    or item.get("short_id")
+                )
+                nickname = user.get("nickname")
                 user_id = item.get("user_id", "")
-                userIDDict[str(short_id)] = {"nickname": nickname, "user_id": user_id}
+                if short_id:
+                    userIDDict[str(short_id)] = {
+                        "nickname": nickname,
+                        "remark_name": user.get("remark_name") or user.get("remarkName"),
+                        "short_id": short_id,
+                        "user_id": user_id,
+                    }
         except Exception as e:
             tb = traceback.extract_tb(e.__traceback__)
             last = tb[-1]
@@ -127,7 +168,7 @@ def scroll_and_select_user(page, username, targets):
                 logger.debug(f"账号 {username} 找到好友 {targetName}")
                 # 检查是否是目标用户名
                 if matchMode == "short_id":
-                    targetSymbol = next((sid for sid, info in userIDDict.items() if info.get("nickname") == targetName), None)
+                    targetSymbol = resolve_target_symbol(targetName, targets, userIDDict)
                 else:
                     targetSymbol = targetName
 

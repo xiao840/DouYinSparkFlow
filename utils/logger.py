@@ -33,6 +33,8 @@ def setup_logger(name="app", level="Info"):
     
     logger = logging.getLogger(name)
     logger.setLevel(level)
+    for handler in logger.handlers:
+        handler.setLevel(level)
 
     # 防止重复添加处理器
     if not logger.handlers:
