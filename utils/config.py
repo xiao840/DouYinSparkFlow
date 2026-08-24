@@ -76,10 +76,18 @@ def get_userData():
         return userData
 
     tasks = json.loads(os.getenv("TASKS", "[]"))
+    if isinstance(tasks, dict):
+        tasks = [tasks]
+    elif not isinstance(tasks, list):
+        logger.warning("TASKS 必须是 JSON 数组或单个任务对象，已忽略无效配置")
+        tasks = []
 
     userData = []
 
     for task in tasks:
+        if not isinstance(task, dict):
+            logger.warning("TASKS 包含非对象任务，已跳过")
+            continue
         username = task.get("username", "未知用户")
         unique_id = task.get("unique_id")
         if not unique_id:
